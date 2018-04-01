@@ -31,7 +31,7 @@ import io.zeebe.broker.Loggers;
 import io.zeebe.broker.clustering.management.memberList.ClusterMemberListManager;
 import io.zeebe.broker.clustering.management.memberList.MemberRaftComposite;
 import io.zeebe.broker.clustering.management.message.*;
-import io.zeebe.broker.clustering2.api.ManagementApiRequestHandler;
+import io.zeebe.broker.clustering2.api.*;
 import io.zeebe.broker.clustering2.handler.Topology;
 import io.zeebe.broker.clustering2.raft.RaftPersistentFileStorage;
 import io.zeebe.broker.clustering2.raft.RaftService;

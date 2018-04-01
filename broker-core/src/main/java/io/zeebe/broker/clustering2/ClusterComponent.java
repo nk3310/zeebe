@@ -19,6 +19,7 @@ package io.zeebe.broker.clustering2;
 
 import static io.zeebe.broker.clustering2.ClusterServiceNames.*;
 
+import io.zeebe.broker.clustering2.gossip.GossipJoinService;
 import io.zeebe.broker.clustering2.gossip.GossipService;
 import io.zeebe.broker.clustering2.topology.TopologyManagerService;
 import io.zeebe.broker.system.*;
@@ -44,6 +45,11 @@ public class ClusterComponent implements Component
         serviceContainer.createService(GOSSIP_SERVICE, gossipService)
             .dependency(TransportServiceNames.clientTransport(TransportServiceNames.MANAGEMENT_API_CLIENT_NAME), gossipService.getClientTransportInjector())
             .dependency(TransportServiceNames.bufferingServerTransport(TransportServiceNames.MANAGEMENT_API_SERVER_NAME), gossipService.getBufferingServerTransportInjector())
+            .install();
+
+        final GossipJoinService gossipJoinService = new GossipJoinService(config);
+        serviceContainer.createService(GOSSIP_JOIN_SERVICE, gossipJoinService)
+            .dependency(GOSSIP_SERVICE, gossipJoinService.getGossipInjector())
             .install();
 
         final TopologyManagerService topologyManagerService = new TopologyManagerService(config);

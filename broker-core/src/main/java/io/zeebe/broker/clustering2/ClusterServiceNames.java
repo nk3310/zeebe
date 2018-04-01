@@ -27,6 +27,8 @@ import io.zeebe.servicecontainer.ServiceName;
 public class ClusterServiceNames
 {
     public static final ServiceName<Gossip> GOSSIP_SERVICE = ServiceName.newServiceName("cluster.gossip", Gossip.class);
+    public static final ServiceName<Object> GOSSIP_JOIN_SERVICE = ServiceName.newServiceName("cluster.gossip.join", Object.class);
+
     public static final ServiceName<TopologyManager> TOPOLOGY_MANAGER_SERVICE = ServiceName.newServiceName("cluster.topologyManager", TopologyManager.class);
     public static final ServiceName<Raft> RAFT_SERVICE_GROUP = ServiceName.newServiceName("cluster.raft.service", Raft.class);
     public static final ServiceName<ClusterManager> CLUSTER_MANAGER_SERVICE = ServiceName.newServiceName("cluster.manager", ClusterManager.class);

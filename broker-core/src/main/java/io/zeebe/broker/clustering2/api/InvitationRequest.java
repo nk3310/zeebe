@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.zeebe.broker.clustering.management.message;
+package io.zeebe.broker.clustering2.api;
 
 import static io.zeebe.clustering.management.InvitationRequestEncoder.partitionIdNullValue;
 import static io.zeebe.clustering.management.InvitationRequestEncoder.termNullValue;

@@ -22,6 +22,8 @@ import static io.zeebe.util.buffer.BufferUtil.*;
 
 import java.util.Arrays;
 
+import io.zeebe.broker.clustering2.api.InvitationRequest;
+import io.zeebe.broker.clustering2.api.InvitationResponse;
 import io.zeebe.transport.SocketAddress;
 import org.agrona.DirectBuffer;
 import org.junit.Test;

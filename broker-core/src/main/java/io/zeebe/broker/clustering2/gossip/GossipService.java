@@ -17,22 +17,17 @@
  */
 package io.zeebe.broker.clustering2.gossip;
 
-import static io.zeebe.util.LogUtil.*;
-
-import java.util.concurrent.TimeUnit;
-
-import io.zeebe.broker.Loggers;
 import io.zeebe.broker.transport.cfg.SocketBindingCfg;
 import io.zeebe.broker.transport.cfg.TransportComponentCfg;
 import io.zeebe.gossip.Gossip;
 import io.zeebe.servicecontainer.*;
 import io.zeebe.transport.*;
-import org.slf4j.Logger;
 
+/**
+ * Start / stop gossip
+ */
 public class GossipService implements Service<Gossip>
 {
-    private static final Logger LOG = Loggers.CLUSTERING_LOGGER;
-
     private final Injector<ClientTransport> clientTransportInjector = new Injector<>();
     private final Injector<BufferingServerTransport> bufferingServerTransportInjector = new Injector<>();
     private final TransportComponentCfg transportComponentCfg;
@@ -64,11 +59,7 @@ public class GossipService implements Service<Gossip>
     @Override
     public void stop(ServiceStopContext stopContext)
     {
-        stopContext.run(() ->
-        {
-            catchAndLog(LOG, () -> gossip.leave().get(5, TimeUnit.SECONDS));
-            catchAndLog(LOG, () -> gossip.close().get(5, TimeUnit.SECONDS));
-        });
+        stopContext.async(gossip.close());
     }
 
     @Override

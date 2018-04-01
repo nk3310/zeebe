@@ -33,8 +33,7 @@ import org.agrona.DirectBuffer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-
-import io.zeebe.broker.clustering.management.message.CreatePartitionRequest;
+import io.zeebe.broker.clustering2.api.CreatePartitionRequest;
 import io.zeebe.broker.test.EmbeddedBrokerRule;
 import io.zeebe.protocol.Protocol;
 import io.zeebe.protocol.clientapi.ControlMessageType;
