@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.zeebe.broker.clustering2.raft;
+package io.zeebe.broker.clustering2.base.raft.config;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -32,7 +32,17 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
-public class RaftPersistentFileStorage implements RaftPersistentStorage
+/**
+ * Represents the configuration that Raft persists locally on the filesystem.
+ *<p>
+ * In addition to protocol state managed through {@link RaftPersistentStorage}, we keep
+ * <ul>
+ * <li>partition id</li>
+ * <li>topic name</li>
+ * <li>directory path of the local data directory of the logstream used</li>
+ * </ul>
+ */
+public class RaftPersistentConfiguration implements RaftPersistentStorage
 {
     private final RaftConfigurationMetadata configuration = new RaftConfigurationMetadata();
 
@@ -46,7 +56,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     private final SocketAddress votedFor = new SocketAddress();
     private LogStream logStream;
 
-    public RaftPersistentFileStorage(final String filename)
+    public RaftPersistentConfiguration(final String filename)
     {
         file = new File(filename);
         tmpFile = new File(filename + ".tmp");
@@ -56,6 +66,12 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
         load();
     }
 
+    public void delete()
+    {
+        file.delete();
+        tmpFile.delete();
+    }
+
     @Override
     public int getTerm()
     {
@@ -63,7 +79,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     }
 
     @Override
-    public RaftPersistentFileStorage setTerm(final int term)
+    public RaftPersistentConfiguration setTerm(final int term)
     {
         logStream.setTerm(term);
 
@@ -86,7 +102,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     }
 
     @Override
-    public RaftPersistentFileStorage setVotedFor(final SocketAddress votedFor)
+    public RaftPersistentConfiguration setVotedFor(final SocketAddress votedFor)
     {
         configuration.setVotedFor(votedFor);
 
@@ -123,7 +139,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     }
 
     @Override
-    public RaftPersistentFileStorage addMember(final SocketAddress member)
+    public RaftPersistentConfiguration addMember(final SocketAddress member)
     {
         configuration.addMember(member);
 
@@ -131,7 +147,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     }
 
     @Override
-    public RaftPersistentFileStorage clearMembers()
+    public RaftPersistentConfiguration clearMembers()
     {
         configuration.membersProp.reset();
 
@@ -163,7 +179,7 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
     }
 
     @Override
-    public RaftPersistentFileStorage save()
+    public RaftPersistentConfiguration save()
     {
         final int length = configuration.getEncodedLength();
 
@@ -224,22 +240,21 @@ public class RaftPersistentFileStorage implements RaftPersistentStorage
         return configuration.getLogDirectory();
     }
 
-    public RaftPersistentFileStorage setLogStream(final LogStream logStream)
+    public RaftPersistentConfiguration setTopicName(DirectBuffer topicName)
     {
-        this.logStream = logStream;
-
-        configuration.setTopicName(logStream.getTopicName());
-        configuration.setPartitionId(logStream.getPartitionId());
-
-        logStream.setTerm(configuration.getTerm());
-
+        configuration.setTopicName(topicName);
         return this;
     }
 
-    public RaftPersistentFileStorage setLogDirectory(final String logDirectory)
+    public RaftPersistentConfiguration setPartitionId(int partitionId)
+    {
+        configuration.setPartitionId(partitionId);
+        return this;
+    }
+
+    public RaftPersistentConfiguration setLogDirectory(final String logDirectory)
     {
         configuration.setLogDirectory(logDirectory);
-
         return this;
     }
 }

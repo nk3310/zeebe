@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.zeebe.broker.clustering2.gossip;
+package io.zeebe.broker.clustering2.base.gossip;
 
 import io.zeebe.broker.transport.cfg.SocketBindingCfg;
 import io.zeebe.broker.transport.cfg.TransportComponentCfg;
@@ -24,7 +24,7 @@ import io.zeebe.servicecontainer.*;
 import io.zeebe.transport.*;
 
 /**
- * Start / stop gossip
+ * Start / stop gossip on broker start / stop
  */
 public class GossipService implements Service<Gossip>
 {

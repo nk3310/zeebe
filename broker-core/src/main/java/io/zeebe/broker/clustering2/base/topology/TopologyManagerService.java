@@ -1,6 +1,6 @@
-package io.zeebe.broker.clustering2.topology;
+package io.zeebe.broker.clustering2.base.topology;
 
-import io.zeebe.broker.clustering2.topology.Topology.MemberInfo;
+import io.zeebe.broker.clustering2.base.topology.Topology.MemberInfo;
 import io.zeebe.broker.transport.cfg.TransportComponentCfg;
 import io.zeebe.gossip.Gossip;
 import io.zeebe.raft.Raft;

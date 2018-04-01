@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.zeebe.broker.clustering2.ClusterComponentConfiguration;
-import io.zeebe.broker.clustering2.gossip.BrokerGossipConfiguration;
+import io.zeebe.broker.clustering2.base.gossip.BrokerGossipConfiguration;
 import io.zeebe.broker.event.processor.SubscriptionCfg;
 import io.zeebe.broker.logstreams.cfg.LogStreamsCfg;
 import io.zeebe.broker.logstreams.cfg.SnapshotStorageCfg;

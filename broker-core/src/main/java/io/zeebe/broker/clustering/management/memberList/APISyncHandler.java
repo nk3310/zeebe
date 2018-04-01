@@ -17,7 +17,7 @@
  */
 package io.zeebe.broker.clustering.management.memberList;
 
-import static io.zeebe.broker.clustering2.gossip.GossipCustomEventEncoding.writeSockedAddresses;
+import static io.zeebe.broker.clustering2.base.gossip.GossipCustomEventEncoding.writeSockedAddresses;
 
 import java.util.Iterator;
 

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.zeebe.broker.clustering.member.Member;
-import io.zeebe.broker.clustering2.topology.dto.BrokerDto;
+import io.zeebe.broker.clustering2.base.topology.dto.BrokerDto;
 import io.zeebe.util.collection.IntIterator;
 import org.junit.Before;
 import org.junit.Ignore;

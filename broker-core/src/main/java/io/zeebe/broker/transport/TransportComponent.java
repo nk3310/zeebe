@@ -23,8 +23,8 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 
-import io.zeebe.broker.clustering2.ClusterServiceNames;
-import io.zeebe.broker.clustering2.raft.RaftApiMessageHandlerService;
+import io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames;
+import io.zeebe.broker.clustering2.base.raft.RaftApiMessageHandlerService;
 import io.zeebe.broker.event.TopicSubscriptionServiceNames;
 import io.zeebe.broker.logstreams.LogStreamServiceNames;
 import io.zeebe.broker.services.DispatcherService;
@@ -102,7 +102,7 @@ public class TransportComponent implements Component
 
         final RaftApiMessageHandlerService raftApiMessageHandlerService = new RaftApiMessageHandlerService();
         serviceContainer.createService(REPLICATION_API_MESSAGE_HANDLER, raftApiMessageHandlerService)
-                        .groupReference(ClusterServiceNames.RAFT_SERVICE_GROUP, raftApiMessageHandlerService.getRaftGroupReference())
+                        .groupReference(ClusterBaseLayerServiceNames.RAFT_SERVICE_GROUP, raftApiMessageHandlerService.getRaftGroupReference())
                         .install();
 
         final long controlMessageRequestTimeoutInMillis = transportComponentCfg.clientApi.getControlMessageRequestTimeoutInMillis(Long.MAX_VALUE);
@@ -114,7 +114,7 @@ public class TransportComponent implements Component
             .dependency(TaskQueueServiceNames.TASK_QUEUE_SUBSCRIPTION_MANAGER, controlMessageHandlerManagerService.getTaskSubscriptionManagerInjector())
             .dependency(TopicSubscriptionServiceNames.TOPIC_SUBSCRIPTION_SERVICE, controlMessageHandlerManagerService.getTopicSubscriptionServiceInjector())
             .dependency(SystemServiceNames.SYSTEM_LOG_MANAGER, controlMessageHandlerManagerService.getSystemPartitionManagerInjector())
-            .dependency(ClusterServiceNames.CLUSTER_MANAGER_SERVICE, controlMessageHandlerManagerService.getClusterManagerInjector())
+            .dependency(ClusterBaseLayerServiceNames.CLUSTER_MANAGER_SERVICE, controlMessageHandlerManagerService.getClusterManagerInjector())
             .install();
 
         context.addRequiredStartAction(replactionApiFuture);

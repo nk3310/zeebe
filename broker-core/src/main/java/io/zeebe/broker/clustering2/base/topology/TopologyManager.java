@@ -1,16 +1,21 @@
-package io.zeebe.broker.clustering2.topology;
+package io.zeebe.broker.clustering2.base.topology;
 
-import static io.zeebe.broker.clustering2.gossip.GossipCustomEventEncoding.*;
+import static io.zeebe.broker.clustering2.base.gossip.GossipCustomEventEncoding.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.zeebe.broker.Loggers;
-import io.zeebe.broker.clustering2.topology.Topology.MemberInfo;
+import io.zeebe.broker.clustering2.base.topology.Topology.MemberInfo;
 import io.zeebe.gossip.*;
 import io.zeebe.gossip.dissemination.GossipSyncRequest;
+import io.zeebe.gossip.membership.Member;
 import io.zeebe.logstreams.log.LogStream;
 import io.zeebe.raft.Raft;
 import io.zeebe.raft.RaftStateListener;
 import io.zeebe.raft.state.RaftState;
 import io.zeebe.transport.SocketAddress;
+import io.zeebe.util.LogUtil;
 import io.zeebe.util.buffer.BufferUtil;
 import io.zeebe.util.sched.Actor;
 import io.zeebe.util.sched.future.ActorFuture;
@@ -24,6 +29,7 @@ public class TopologyManager extends Actor
     public static final DirectBuffer CONTACT_POINTS_EVENT_TYPE = BufferUtil.wrapString("contact_points");
     public static final DirectBuffer PARTITIONS_EVENT_TYPE = BufferUtil.wrapString("partitions");
 
+    private final MembershipListener membershipListner = new MembershipListener();
     private final ContactPointsChangeListener contactPointsChangeListener = new ContactPointsChangeListener();
     private final ParitionChangeListener paritionChangeListener = new ParitionChangeListener();
     private final KnownContactPointsSyncHandler localContactPointsSycHandler = new KnownContactPointsSyncHandler();
@@ -32,6 +38,8 @@ public class TopologyManager extends Actor
 
     private final Topology topology;
     private final Gossip gossip;
+
+    private List<TopologyMemberListener> topologyMemberListers = new ArrayList<>();
 
     public TopologyManager(Gossip gossip, MemberInfo localBroker)
     {
@@ -42,6 +50,8 @@ public class TopologyManager extends Actor
     @Override
     protected void onActorStarting()
     {
+        gossip.addMembershipListener(membershipListner);
+
         gossip.addCustomEventListener(CONTACT_POINTS_EVENT_TYPE, contactPointsChangeListener);
         gossip.addCustomEventListener(PARTITIONS_EVENT_TYPE, paritionChangeListener);
 
@@ -118,8 +128,30 @@ public class TopologyManager extends Actor
                 final SocketAddress replicationApi = new SocketAddress();
                 readSocketAddress(offset, payloadCopy, replicationApi);
 
-                topology.addMember(new MemberInfo(clientApi, managementApi, replicationApi));
+                final MemberInfo newMember = new MemberInfo(clientApi, managementApi, replicationApi);
+                topology.addMember(newMember);
+                notifyMemberAdded(newMember);
             });
+        }
+    }
+
+    private class MembershipListener implements GossipMembershipListener
+    {
+        @Override
+        public void onAdd(Member member)
+        {
+            // noop; we listen on the availability of contact points, see ContactPointsChangeListener
+        }
+
+        @Override
+        public void onRemove(Member member)
+        {
+            final MemberInfo topologyMember = topology.getMemberByAddress(member.getAddress());
+            if (topologyMember != null)
+            {
+                topology.removeMember(topologyMember);
+                notifyMemberRemoved(topologyMember);
+            }
         }
     }
 
@@ -220,5 +252,49 @@ public class TopologyManager extends Actor
         {
             return topology.asDto();
         });
+    }
+
+    public void addTopologyMemberListener(TopologyMemberListener listener)
+    {
+        actor.run(() ->
+        {
+            topologyMemberListers.add(listener);
+
+            // notify initially
+            topology.getMembers().forEach((m) ->
+            {
+                LogUtil.catchAndLog(LOG, () -> listener.onMemberAdded(m, topology));
+            });
+        });
+    }
+
+    public void removeTopologyMemberListener(TopologyMemberListener listener)
+    {
+        actor.run(() ->
+        {
+            topologyMemberListers.remove(listener);
+        });
+    }
+
+    private void notifyMemberAdded(MemberInfo memberInfo)
+    {
+        for (TopologyMemberListener listener : topologyMemberListers)
+        {
+            LogUtil.catchAndLog(LOG, () -> listener.onMemberAdded(memberInfo, topology));
+        }
+    }
+
+    private void notifyMemberRemoved(MemberInfo memberInfo)
+    {
+        for (TopologyMemberListener listener : topologyMemberListers)
+        {
+            LogUtil.catchAndLog(LOG, () -> listener.onMemberRemoved(memberInfo, topology));
+        }
+    }
+
+    public interface TopologyMemberListener
+    {
+        void onMemberAdded(MemberInfo memberInfo, Topology topology);
+        void onMemberRemoved(MemberInfo memberInfo, Topology topology);
     }
 }

@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.zeebe.broker.clustering2.raft;
+package io.zeebe.broker.clustering2.base.raft;
 
-import static io.zeebe.broker.clustering2.ClusterServiceNames.CLUSTER_MANAGER_SERVICE;
+import static io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames.CLUSTER_MANAGER_SERVICE;
 import static io.zeebe.broker.logstreams.LogStreamServiceNames.logStreamServiceName;
 
 import java.util.List;
@@ -67,10 +67,14 @@ public class RaftService extends Actor implements Service<Raft>, RaftStateListen
     private ServiceStartContext startContext;
     private RaftState currentRaftState;
 
-    public RaftService(final RaftConfiguration configuration, final SocketAddress socketAddress, final LogStream logStream,
-                       final List<SocketAddress> members, final RaftPersistentStorage persistentStorage,
-                       RaftStateListener raftStateListener, OnOpenLogStreamListener onOpenLogStreamListener,
-                       ServiceName<Raft> raftServiceName)
+    public RaftService(final RaftConfiguration configuration,
+        final SocketAddress socketAddress,
+        final LogStream logStream,
+        final List<SocketAddress> members,
+        final RaftPersistentStorage persistentStorage,
+        RaftStateListener raftStateListener,
+        OnOpenLogStreamListener onOpenLogStreamListener,
+        ServiceName<Raft> raftServiceName)
     {
         this.configuration = configuration;
         this.socketAddress = socketAddress;

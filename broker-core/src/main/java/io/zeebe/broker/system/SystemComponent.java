@@ -19,7 +19,7 @@ package io.zeebe.broker.system;
 
 import static io.zeebe.broker.system.SystemServiceNames.*;
 
-import io.zeebe.broker.clustering2.ClusterServiceNames;
+import io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames;
 import io.zeebe.broker.logstreams.LogStreamServiceNames;
 import io.zeebe.broker.system.deployment.service.DeploymentManager;
 import io.zeebe.broker.system.deployment.service.WorkflowRequestMessageHandlerService;
@@ -46,7 +46,7 @@ public class SystemComponent implements Component
 
         final PartitionManagerService partitionManagerService = new PartitionManagerService();
         serviceContainer.createService(SystemServiceNames.PARTITION_MANAGER_SERVICE, partitionManagerService)
-            .dependency(ClusterServiceNames.MEMBER_LIST_SERVICE, partitionManagerService.getMemberListServiceInjector())
+            .dependency(ClusterBaseLayerServiceNames.MEMBER_LIST_SERVICE, partitionManagerService.getMemberListServiceInjector())
             .dependency(TransportServiceNames.clientTransport(TransportServiceNames.MANAGEMENT_API_CLIENT_NAME), partitionManagerService.getManagementClientInjector())
             .install();
 

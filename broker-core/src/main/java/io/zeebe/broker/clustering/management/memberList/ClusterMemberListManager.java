@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static io.zeebe.broker.clustering2.gossip.GossipCustomEventEncoding.*;
+import static io.zeebe.broker.clustering2.base.gossip.GossipCustomEventEncoding.*;
 import static io.zeebe.raft.state.RaftState.LEADER;
 
 public class ClusterMemberListManager implements RaftStateListener, OnOpenLogStreamListener

@@ -1,9 +1,9 @@
-package io.zeebe.broker.clustering2.topology;
+package io.zeebe.broker.clustering2.base.topology;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import io.zeebe.broker.clustering2.topology.TopologyDto.BrokerDto;
+import io.zeebe.broker.clustering2.base.topology.TopologyDto.BrokerDto;
 import io.zeebe.raft.state.RaftState;
 import io.zeebe.transport.SocketAddress;
 import io.zeebe.util.buffer.BufferUtil;

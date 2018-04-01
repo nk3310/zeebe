@@ -17,15 +17,19 @@
  */
 package io.zeebe.broker.clustering2;
 
-import static io.zeebe.broker.clustering2.ClusterServiceNames.*;
+import static io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames.*;
 
-import io.zeebe.broker.clustering2.gossip.GossipJoinService;
-import io.zeebe.broker.clustering2.gossip.GossipService;
-import io.zeebe.broker.clustering2.topology.TopologyManagerService;
+import io.zeebe.broker.clustering2.base.ClusterBaseLayerBootstrap;
+import io.zeebe.broker.clustering2.base.connections.RemoteAddressManager;
+import io.zeebe.broker.clustering2.base.gossip.GossipJoinService;
+import io.zeebe.broker.clustering2.base.gossip.GossipService;
+import io.zeebe.broker.clustering2.base.raft.RaftBootstrapService;
+import io.zeebe.broker.clustering2.base.raft.config.RaftPersistentConfigurationManagerService;
+import io.zeebe.broker.clustering2.base.topology.TopologyManagerService;
 import io.zeebe.broker.system.*;
 import io.zeebe.broker.transport.TransportServiceNames;
 import io.zeebe.broker.transport.cfg.TransportComponentCfg;
-import io.zeebe.servicecontainer.ServiceContainer;
+import io.zeebe.servicecontainer.*;
 
 public class ClusterComponent implements Component
 {
@@ -36,10 +40,32 @@ public class ClusterComponent implements Component
         final ConfigurationManager configurationManager = context.getConfigurationManager();
         final TransportComponentCfg config = configurationManager.readEntry("network", TransportComponentCfg.class);
 
-        initGossip(serviceContainer, config);
+        initClusteringBaseLayer(context, serviceContainer, config);
     }
 
-    protected void initGossip(final ServiceContainer serviceContainer, final TransportComponentCfg config)
+    private void initClusteringBaseLayer(final SystemContext context, final ServiceContainer serviceContainer, final TransportComponentCfg config)
+    {
+        final ClusterBaseLayerBootstrap clusteringBootstrap = new ClusterBaseLayerBootstrap();
+        final ServiceBuilder<ClusterBaseLayerBootstrap> bootstrapBuilder = serviceContainer.createService(CLUSTERING_BOOTSTRAP, clusteringBootstrap);
+        ClusterBaseLayerBootstrap.addDepenedencies(bootstrapBuilder);
+        context.addRequiredStartAction(bootstrapBuilder.install());
+
+        final TopologyManagerService topologyManagerService = new TopologyManagerService(config);
+        serviceContainer.createService(TOPOLOGY_MANAGER_SERVICE, topologyManagerService)
+            .dependency(GOSSIP_SERVICE, topologyManagerService.getGossipInjector())
+            .groupReference(RAFT_SERVICE_GROUP, topologyManagerService.getRaftReference())
+            .install();
+
+        final RemoteAddressManager remoteAddressManager = new RemoteAddressManager();
+        serviceContainer.createService(REMOTE_ADDRESS_MANAGER_SERVICE, remoteAddressManager)
+            .dependency(TOPOLOGY_MANAGER_SERVICE, remoteAddressManager.getTopologyManagerInjector())
+            .install();
+
+        initGossip(serviceContainer, config);
+        initRaft(serviceContainer, config);
+    }
+
+    private void initGossip(final ServiceContainer serviceContainer, final TransportComponentCfg config)
     {
         final GossipService gossipService = new GossipService(config);
         serviceContainer.createService(GOSSIP_SERVICE, gossipService)
@@ -51,12 +77,19 @@ public class ClusterComponent implements Component
         serviceContainer.createService(GOSSIP_JOIN_SERVICE, gossipJoinService)
             .dependency(GOSSIP_SERVICE, gossipJoinService.getGossipInjector())
             .install();
+    }
 
-        final TopologyManagerService topologyManagerService = new TopologyManagerService(config);
-        serviceContainer.createService(TOPOLOGY_MANAGER_SERVICE, topologyManagerService)
-            .dependency(GOSSIP_SERVICE, topologyManagerService.getGossipInjector())
-            .groupReference(RAFT_SERVICE_GROUP, topologyManagerService.getRaftReference())
+    private void initRaft(final ServiceContainer serviceContainer, final TransportComponentCfg config)
+    {
+        final RaftPersistentConfigurationManagerService raftConfigurationManagerService = new RaftPersistentConfigurationManagerService(config);
+        serviceContainer.createService(RAFT_CONFIGURATION_MANAGER, raftConfigurationManagerService)
+            .install();
+
+        final RaftBootstrapService raftBootstrapService = new RaftBootstrapService();
+        serviceContainer.createService(RAFT_BOOTSTRAP_SERVICE, raftBootstrapService)
+            .dependency(RAFT_CONFIGURATION_MANAGER, raftBootstrapService.getConfigurationManagerInjector())
             .install();
     }
+
 
 }

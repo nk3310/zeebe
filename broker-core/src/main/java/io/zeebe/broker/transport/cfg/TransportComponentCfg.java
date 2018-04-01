@@ -18,7 +18,7 @@
 package io.zeebe.broker.transport.cfg;
 
 import io.zeebe.broker.clustering2.ClusterComponentConfiguration;
-import io.zeebe.broker.clustering2.gossip.BrokerGossipConfiguration;
+import io.zeebe.broker.clustering2.base.gossip.BrokerGossipConfiguration;
 import io.zeebe.broker.system.ComponentConfiguration;
 import io.zeebe.broker.system.GlobalConfiguration;
 import io.zeebe.raft.RaftConfiguration;

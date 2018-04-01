@@ -25,7 +25,7 @@ import java.io.InputStream;
 import io.zeebe.util.sched.future.ActorFuture;
 import org.junit.After;
 import org.junit.Test;
-import io.zeebe.broker.clustering2.ClusterServiceNames;
+import io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames;
 import io.zeebe.broker.system.ConfigurationManager;
 import io.zeebe.broker.system.ConfigurationManagerImpl;
 import io.zeebe.servicecontainer.Service;
@@ -80,7 +80,7 @@ public class BrokerTest
                                                        return null;
                                                    }
                                                })
-                                               .dependency(ClusterServiceNames.CLUSTER_MANAGER_SERVICE)
+                                               .dependency(ClusterBaseLayerServiceNames.CLUSTER_MANAGER_SERVICE)
                                                .install();
 
         waitUntil(future::isDone);

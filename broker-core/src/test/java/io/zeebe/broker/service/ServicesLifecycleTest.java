@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 
 import io.zeebe.broker.Broker;
-import io.zeebe.broker.clustering2.ClusterServiceNames;
+import io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames;
 import io.zeebe.broker.test.EmbeddedBrokerRule;
 import io.zeebe.broker.workflow.WorkflowQueueServiceNames;
 import io.zeebe.logstreams.processor.StreamProcessorController;
@@ -57,7 +57,7 @@ public class ServicesLifecycleTest
         final String logStreamName = ClientApiRule.DEFAULT_TOPIC_NAME + "." + apiRule.getDefaultPartitionId();
 
         final ServiceName<StreamProcessorController> streamProcessorServiceName = WorkflowQueueServiceNames.workflowInstanceStreamProcessorServiceName(logStreamName);
-        final ServiceName<Raft> raftServiceName = ClusterServiceNames.raftServiceName(logStreamName);
+        final ServiceName<Raft> raftServiceName = ClusterBaseLayerServiceNames.raftServiceName(logStreamName);
 
         final StreamProcessorController streamProcessorController =
                 getService(serviceContainer, streamProcessorServiceName);

@@ -18,7 +18,7 @@
 package io.zeebe.broker.system.log;
 
 import org.agrona.DirectBuffer;
-import io.zeebe.broker.clustering2.topology.dto.BrokerDto;
+import io.zeebe.broker.clustering2.base.topology.dto.BrokerDto;
 import io.zeebe.msgpack.UnpackedObject;
 import io.zeebe.msgpack.property.EnumProperty;
 import io.zeebe.msgpack.property.IntegerProperty;

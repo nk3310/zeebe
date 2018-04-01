@@ -1,4 +1,4 @@
-package io.zeebe.broker.clustering2.gossip;
+package io.zeebe.broker.clustering2.base.gossip;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,12 +32,14 @@ public class GossipJoinService implements Service<Object>
             .map(SocketAddress::from)
             .collect(Collectors.toList());
 
+        // TODO: check if join is retrying internally on failure.
         startContext.async(gossip.join(initalContactPoints));
     }
 
     @Override
     public void stop(ServiceStopContext stopContext)
     {
+        // TODO: check if leave has timeout
         stopContext.async(gossip.leave());
     }
 

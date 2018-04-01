@@ -26,7 +26,7 @@ import io.zeebe.util.sched.future.ActorFuture;
 import org.agrona.ExpandableArrayBuffer;
 import org.slf4j.Logger;
 
-import static io.zeebe.broker.clustering2.gossip.GossipCustomEventEncoding.writeRaftsIntoBuffer;
+import static io.zeebe.broker.clustering2.base.gossip.GossipCustomEventEncoding.writeRaftsIntoBuffer;
 
 import java.util.Iterator;
 import java.util.List;

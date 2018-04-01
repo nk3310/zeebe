@@ -19,8 +19,8 @@ package io.zeebe.broker.clustering.management.memberList;
 
 import io.zeebe.broker.Loggers;
 import io.zeebe.broker.clustering.management.ClusterManagerContext;
+import io.zeebe.broker.clustering2.base.topology.dto.BrokerDto;
 import io.zeebe.broker.clustering2.handler.Topology;
-import io.zeebe.broker.clustering2.topology.dto.BrokerDto;
 import io.zeebe.msgpack.value.ValueArray;
 import io.zeebe.transport.SocketAddress;
 import io.zeebe.util.buffer.BufferUtil;

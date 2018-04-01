@@ -21,7 +21,7 @@ import java.time.Duration;
 
 import io.zeebe.broker.Loggers;
 import io.zeebe.broker.clustering.management.PartitionManager;
-import io.zeebe.broker.clustering2.topology.dto.BrokerDto;
+import io.zeebe.broker.clustering2.base.topology.dto.BrokerDto;
 import io.zeebe.broker.logstreams.processor.*;
 import io.zeebe.transport.*;
 import io.zeebe.util.sched.ActorControl;

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.zeebe.broker.clustering2.gossip;
+package io.zeebe.broker.clustering2.base.gossip;
 
 import static org.agrona.BitUtil.SIZE_OF_BYTE;
 import static org.agrona.BitUtil.SIZE_OF_INT;
@@ -23,9 +23,9 @@ import static org.agrona.BitUtil.SIZE_OF_INT;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import io.zeebe.broker.clustering2.topology.Topology;
-import io.zeebe.broker.clustering2.topology.Topology.MemberInfo;
-import io.zeebe.broker.clustering2.topology.Topology.PartitionInfo;
+import io.zeebe.broker.clustering2.base.topology.Topology;
+import io.zeebe.broker.clustering2.base.topology.Topology.MemberInfo;
+import io.zeebe.broker.clustering2.base.topology.Topology.PartitionInfo;
 import io.zeebe.raft.state.RaftState;
 import io.zeebe.transport.SocketAddress;
 import org.agrona.DirectBuffer;

@@ -17,8 +17,8 @@
  */
 package io.zeebe.broker.clustering.management;
 
-import static io.zeebe.broker.clustering2.ClusterServiceNames.RAFT_SERVICE_GROUP;
-import static io.zeebe.broker.clustering2.ClusterServiceNames.raftServiceName;
+import static io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames.RAFT_SERVICE_GROUP;
+import static io.zeebe.broker.clustering2.base.ClusterBaseLayerServiceNames.raftServiceName;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,9 +32,9 @@ import io.zeebe.broker.clustering.management.memberList.ClusterMemberListManager
 import io.zeebe.broker.clustering.management.memberList.MemberRaftComposite;
 import io.zeebe.broker.clustering.management.message.*;
 import io.zeebe.broker.clustering2.api.*;
+import io.zeebe.broker.clustering2.base.raft.RaftService;
+import io.zeebe.broker.clustering2.base.raft.config.RaftPersistentConfiguration;
 import io.zeebe.broker.clustering2.handler.Topology;
-import io.zeebe.broker.clustering2.raft.RaftPersistentFileStorage;
-import io.zeebe.broker.clustering2.raft.RaftService;
 import io.zeebe.broker.logstreams.LogStreamsManager;
 import io.zeebe.broker.transport.TransportServiceNames;
 import io.zeebe.broker.transport.cfg.SocketBindingCfg;
@@ -134,7 +134,7 @@ public class ClusterManager extends Actor
             for (int i = 0; i < storageFiles.length; i++)
             {
                 final File storageFile = storageFiles[i];
-                final RaftPersistentFileStorage storage = new RaftPersistentFileStorage(storageFile.getAbsolutePath());
+                final RaftPersistentConfiguration storage = new RaftPersistentConfiguration(storageFile.getAbsolutePath());
 
                 final DirectBuffer topicName = storage.getTopicName();
                 final int partitionId = storage.getPartitionId();
@@ -256,7 +256,7 @@ public class ClusterManager extends Actor
                                       .getPath();
 
         final String directory = transportComponentCfg.management.directory;
-        final RaftPersistentFileStorage storage = new RaftPersistentFileStorage(String.format("%s%s.meta", directory, logStream.getLogName()));
+        final RaftPersistentConfiguration storage = new RaftPersistentConfiguration(String.format("%s%s.meta", directory, logStream.getLogName()));
         storage.setLogStream(logStream)
                .setLogDirectory(path)
                .save();

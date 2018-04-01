@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.zeebe.broker.clustering.management.ClusterManager;
-import io.zeebe.broker.clustering2.topology.RequestTopologyHandler;
+import io.zeebe.broker.clustering2.base.topology.RequestTopologyHandler;
 import io.zeebe.broker.event.handler.RemoveTopicSubscriptionHandler;
 import io.zeebe.broker.event.processor.TopicSubscriptionService;
 import io.zeebe.broker.system.log.RequestPartitionsMessageHandler;
