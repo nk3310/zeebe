@@ -22,7 +22,6 @@ import static io.zeebe.test.util.TestUtil.doRepeatedly;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.stream.Stream;
@@ -37,6 +36,7 @@ import io.zeebe.broker.topic.Events;
 import io.zeebe.broker.topic.StreamProcessorControl;
 import io.zeebe.broker.workflow.data.*;
 import io.zeebe.logstreams.LogStreams;
+import io.zeebe.logstreams.impl.service.StreamProcessorService;
 import io.zeebe.logstreams.log.*;
 import io.zeebe.logstreams.processor.*;
 import io.zeebe.logstreams.spi.SnapshotStorage;
@@ -45,6 +45,7 @@ import io.zeebe.msgpack.UnpackedObject;
 import io.zeebe.protocol.Protocol;
 import io.zeebe.protocol.clientapi.EventType;
 import io.zeebe.protocol.impl.BrokerEventMetadata;
+import io.zeebe.servicecontainer.ServiceContainer;
 import io.zeebe.test.util.AutoCloseableRule;
 import io.zeebe.util.buffer.BufferUtil;
 import io.zeebe.util.sched.*;
@@ -68,6 +69,7 @@ public class TestStreams
 
     protected final File storageDirectory;
     protected final AutoCloseableRule closeables;
+    private final ServiceContainer serviceContainer;
 
     protected Map<String, LogStream> managedLogs = new HashMap<>();
 
@@ -78,10 +80,12 @@ public class TestStreams
     public TestStreams(
         File storageDirectory,
         AutoCloseableRule closeables,
+        ServiceContainer serviceContainer,
         ActorScheduler actorScheduler)
     {
         this.storageDirectory = storageDirectory;
         this.closeables = closeables;
+        this.serviceContainer = serviceContainer;
         this.actorScheduler = actorScheduler;
     }
 
@@ -90,12 +94,12 @@ public class TestStreams
         final String rootPath = storageDirectory.getAbsolutePath();
         final LogStream logStream = LogStreams.createFsLogStream(BufferUtil.wrapString(name), 0)
             .logRootPath(rootPath)
-            .actorScheduler(actorScheduler)
+            .serviceContainer(serviceContainer)
+            .logName(name)
             .deleteOnClose(true)
-            .build();
+            .build().join();
 
-        logStream.open();
-        logStream.openLogStreamController().join();
+        logStream.openAppender().join();
 
         actorScheduler.submitActor(new Actor()
         {
@@ -129,7 +133,7 @@ public class TestStreams
         final LogStream logStream = getLogStream(stream);
         try (LogStreamReader reader = new BufferedLogStreamReader(logStream))
         {
-            logStream.closeLogStreamController().get();
+            logStream.closeAppender().get();
 
             reader.seek(position + 1);
 
@@ -140,7 +144,7 @@ public class TestStreams
             }
             logStream.setCommitPosition(Long.MAX_VALUE);
 
-            logStream.openLogStreamController().get();
+            logStream.openAppender().get();
         }
         catch (Exception e)
         {
@@ -151,7 +155,10 @@ public class TestStreams
     public Stream<LoggedEvent> events(String logName)
     {
         final LogStream logStream = managedLogs.get(logName);
+
         final LogStreamReader reader = new BufferedLogStreamReader(logStream);
+        closeables.manage(reader);
+
         reader.seekToFirstEvent();
 
         final Iterable<LoggedEvent> iterable = () -> reader;
@@ -203,6 +210,7 @@ public class TestStreams
 
         protected SuspendableStreamProcessor currentStreamProcessor;
         protected StreamProcessorController currentController;
+        protected StreamProcessorService currentStreamProcessorService;
         private Consumer<SnapshotStorage> snapshotCleaner;
 
         public StreamProcessorControlImpl(
@@ -275,16 +283,10 @@ public class TestStreams
         {
             if (currentController != null && currentController.isOpened())
             {
-                try
-                {
-                    currentController.closeAsync().get();
-                }
-                catch (InterruptedException | ExecutionException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                currentStreamProcessorService.close();
             }
 
+            currentStreamProcessorService = null;
             currentController = null;
             currentStreamProcessor = null;
         }
@@ -292,18 +294,10 @@ public class TestStreams
         @Override
         public void start()
         {
-            currentController = buildStreamProcessorController();
+            currentStreamProcessorService = buildStreamProcessorController();
+            currentController = currentStreamProcessorService.getController();
             final String controllerName = currentController.getName();
             snapshotCleaner = storage -> storage.purgeSnapshot(controllerName);
-
-            try
-            {
-                currentController.openAsync().get();
-            }
-            catch (InterruptedException | ExecutionException e)
-            {
-                throw new RuntimeException(e);
-            }
         }
 
         @Override
@@ -322,7 +316,7 @@ public class TestStreams
             }
         }
 
-        private StreamProcessorController buildStreamProcessorController()
+        private StreamProcessorService buildStreamProcessorController()
         {
             ensureStreamProcessorBuilt();
 
@@ -334,7 +328,9 @@ public class TestStreams
                 .logStream(stream)
                 .snapshotStorage(getSnapshotStorage())
                 .actorScheduler(actorScheduler)
-                .build();
+                .serviceContainer(serviceContainer)
+                .build()
+                .join();
         }
 
     }
