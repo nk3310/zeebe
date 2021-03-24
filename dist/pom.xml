@@ -3,19 +3,54 @@
   <modelVersion>4.0.0</modelVersion>
   <name>Zeebe Distribution</name>
   <artifactId>zeebe-distribution</artifactId>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
 
   <parent>
     <groupId>io.zeebe</groupId>
-    <artifactId>zeebe-core-parent</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <artifactId>zeebe-parent</artifactId>
+    <version>0.27.0-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
+
+  <properties>
+    <zbctl.force>false</zbctl.force>
+    <zbctl.rootDir>${maven.multiModuleProjectDirectory}</zbctl.rootDir>
+  </properties>
 
   <dependencies>
     <dependency>
       <groupId>io.zeebe</groupId>
-      <artifactId>zeebe-broker-core</artifactId>
+      <artifactId>zeebe-broker</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zeebe</groupId>
+      <artifactId>zeebe-gateway</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zeebe</groupId>
+      <artifactId>zeebe-elasticsearch-exporter</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zeebe</groupId>
+      <artifactId>zeebe-util</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zeebe</groupId>
+      <artifactId>atomix-cluster</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zeebe</groupId>
+      <artifactId>atomix-utils</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
     </dependency>
 
     <dependency>
@@ -27,18 +62,100 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
     </dependency>
-  </dependencies>
 
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_hotspot</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- Conflicts with histogram in elasticsearch exporter dependency -->
+          <groupId>org.hdrhistogram</groupId>
+          <artifactId>HdrHistogram</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- needed for the Spring actuators which enable health checks and liveness probes-->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-actuator-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>appassembler-maven-plugin</artifactId>
         <configuration>
-          <configurationDirectory>conf</configurationDirectory>
+          <configurationDirectory>config</configurationDirectory>
           <copyConfigurationDirectory>true</copyConfigurationDirectory>
           <includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
-          <extraJvmArguments>-Xms128m -Dlog4j.configurationFile=../conf/log4j2.xml</extraJvmArguments>
+          <extraJvmArguments>
+            -Xms128m
+            --illegal-access=deny
+          </extraJvmArguments>
           <repositoryLayout>flat</repositoryLayout>
           <useWildcardClassPath>true</useWildcardClassPath>
           <repositoryName>lib</repositoryName>
@@ -51,9 +168,10 @@
             <program>
               <mainClass>io.zeebe.broker.StandaloneBroker</mainClass>
               <id>broker</id>
-              <commandLineArguments>
-                <commandLineArgument>../conf/zeebe.cfg.toml</commandLineArgument>
-              </commandLineArguments>
+            </program>
+            <program>
+              <mainClass>io.zeebe.gateway.StandaloneGateway</mainClass>
+              <id>gateway</id>
             </program>
           </programs>
         </configuration>
@@ -79,12 +197,12 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
-                <copy file="${env.GOPATH}/src/github.com/zeebe-io/zbctl/dist/linux_amd64/zbctl" tofile="${project.build.directory}/zeebe-broker/bin/zbctl" failonerror="false" />
-                <copy file="${env.GOPATH}/src/github.com/zeebe-io/zbctl/dist/windows_amd64/zbctl.exe" tofile="${project.build.directory}/zeebe-broker/bin/zbctl.exe" failonerror="false" />
-                <copy file="${env.GOPATH}/src/github.com/zeebe-io/zbctl/dist/darwin_amd64/zbctl" tofile="${project.build.directory}/zeebe-broker/bin/zbctl.darwin" failonerror="false" />
-                <chmod dir="${project.build.directory}/zeebe-broker/bin" perm="ugo+rx" includes="zbctl*" />
-              </tasks>
+              <target>
+                <copy file="${zbctl.rootDir}/clients/go/cmd/zbctl/dist/zbctl" tofile="${project.build.directory}/zeebe-broker/bin/zbctl" failonerror="${zbctl.force}" />
+                <copy file="${zbctl.rootDir}/clients/go/cmd/zbctl/dist/zbctl.exe" tofile="${project.build.directory}/zeebe-broker/bin/zbctl.exe" failonerror="${zbctl.force}" />
+                <copy file="${zbctl.rootDir}/clients/go/cmd/zbctl/dist/zbctl.darwin" tofile="${project.build.directory}/zeebe-broker/bin/zbctl.darwin" failonerror="${zbctl.force}" />
+                <chmod dir="${project.build.directory}/zeebe-broker/bin" perm="ugo+rx" includes="zbctl*" failonerror="${zbctl.force}" />
+              </target>
             </configuration>
           </execution>
         </executions>
@@ -107,6 +225,22 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <configuration>
+          <!-- dependencies only packaged but not explicitly used -->
+          <usedDependencies>
+            <dependency>io.zeebe:zeebe-elasticsearch-exporter</dependency>
+
+            <!-- Needed for Spring Actuators, which provide health checks and liveness/readiness probed -->
+            <dependency>org.springframework.boot:spring-boot-starter-web</dependency>
+            <dependency>io.micrometer:micrometer-core</dependency>
+            <dependency>io.micrometer:micrometer-registry-prometheus</dependency>
+          </usedDependencies>
+        </configuration>
       </plugin>
     </plugins>
   </build>

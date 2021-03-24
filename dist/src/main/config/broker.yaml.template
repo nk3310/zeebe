@@ -1,0 +1,469 @@
+# Zeebe Broker configuration file (without embedded gateway)
+
+# ! ! ! ! ! ! ! ! ! !
+# In order to activate the settings in this file, rename this file to application.yaml.
+# ! ! ! ! ! ! ! ! ! !
+
+# Overview -------------------------------------------
+
+# This file contains a complete list of available configuration options.
+
+# This file shows example values for configuring several exporters. To enable an exporter
+# please uncomment the whole block and overwrite the settings.
+
+# Conventions:
+#
+# Byte sizes
+# For buffers and others must be specified as strings and follow the following
+# format: "10U" where U (unit) must be replaced with KB = Kilobytes, MB = Megabytes or GB = Gigabytes.
+# If unit is omitted then the default unit is simply bytes.
+# Example:
+# sendBufferSize = "16MB" (creates a buffer of 16 Megabytes)
+#
+# Time units
+# Timeouts, intervals, and the likes, must be specified either in the standard ISO-8601 format used
+# by java.time.Duration, or as strings with the following format: "VU", where:
+#   - V is a numerical value (e.g. 1, 5, 10, etc.)
+#   - U is the unit, one of: ms = Millis, s = Seconds, m = Minutes, or h = Hours
+#
+# Paths:
+# Relative paths are resolved relative to the installation directory of the broker.
+# ----------------------------------------------------
+
+# zeebe:
+  # broker:
+    # Sets the timeout for each start and closing step.
+    #
+    # Broker bootstrap and closing is divided in several individual steps.
+    # Each step should take at max the defined stepTimeout, otherwise the bootstrap is aborted.
+    #
+    # This setting can also be overridden using the environment variable ZEEBE_BROKER_STEPTIMEOUT.
+    # stepTimeout: 5m
+
+    # gateway:
+      # Enable the embedded gateway to start on broker startup.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_GATEWAY_ENABLE.
+      # enable: false
+
+    # network:
+      # This section contains the network configuration. Particularly, it allows to
+      # configure the hosts and ports the broker should bind to. The broker exposes three sockets:
+      # 1. command: the socket which is used for gateway-to-broker communication
+      # 2. internal: the socket which is used for broker-to-broker communication
+      # 3. monitoring: the socket which is used to monitor the broker
+
+      # Controls the default host the broker should bind to. Can be overwritten on a
+      # per binding basis for client, management and replication
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_HOST.
+      # host: 0.0.0.0
+
+      # Controls the advertised host; if omitted defaults to the host. This is particularly useful if your
+      # broker stands behind a proxy.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_ADVERTISEDHOST.
+      # advertisedHost: 0.0.0.0
+
+      # If a port offset is set it will be added to all ports specified in the config
+      # or the default values. This is a shortcut to not always specifying every port.
+      #
+      # The offset will be added to the second last position of the port, as Zeebe
+      # requires multiple ports. As example a portOffset of 5 will increment all ports
+      # by 50, i.e. 26500 will become 26550 and so on.
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_PORTOFFSET.
+      # portOffset: 0
+
+      # Sets the maximum size of the incoming and outgoing messages (i.e. commands and events).
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_MAXMESSAGESIZE.
+      # maxMessageSize: 4MB
+
+      # commandApi:
+        # Overrides the host used for gateway-to-broker communication
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_COMMANDAPI_HOST.
+        # host: 0.0.0.0
+
+        # Sets the port used for gateway-to-broker communication
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_COMMANDAPI_PORT.
+        # port: 26501
+
+      # internalApi:
+        # Overrides the host used for internal broker-to-broker communication
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_INTERNALAPI_HOST.
+        # host: 0.0.0.0
+
+        # Sets the port used for internal broker-to-broker communication
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_INTERNALAPI_PORT.
+        # port: 26502
+
+      # monitoringApi:
+        # Overrides the host used for exposing monitoring information
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_MONITORINGAPI_HOST.
+        # host: 0.0.0.0
+
+        # Sets the port used for exposing monitoring information
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_NETWORK_MONITORINGAPI_PORT.
+        # port: 9600
+
+    # data:
+      # This section allows to configure Zeebe's data storage. Data is stored in
+      # "partition folders". A partition folder has the following structure:
+      #
+      # partition-0                       (root partition folder)
+      # ├── partition.json                (metadata about the partition)
+      # ├── segments                      (the actual data as segment files)
+      # │   ├── 00.data
+      # │   └── 01.data
+      # └── state                     	(stream processor state and snapshots)
+      #     └── stream-processor
+      #		  ├── runtime
+      #		  └── snapshots
+
+      # Specify the directory in which data is stored.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_DIRECTORY.
+      # directory: data
+
+      # The size of data log segment files.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_LOGSEGMENTSIZE.
+      # logSegmentSize: 512MB
+
+      # Configure whether data log segment file channels should be memory mapped.
+      # WARNING: This setting has been deprecated. In future versions, log segment file channels will always be memory mapped.
+      #
+      # Zeebe reads the data log segment files using file channels.
+      # Memory mapping these should generally allow for faster processing,
+      # resulting in reduced cycle times (i.e. total duration of a single process instance).
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_USEMMAP.
+      # useMmap: true
+
+      # How often we take snapshots of streams (time unit)
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_SNAPSHOTPERIOD.
+      # snapshotPeriod: 15m
+
+      # Configure whether to monitor disk usage to prevent out of disk space issues.
+      # If set to false the broker might run out of disk space and end in a non recoverable state.
+      # If set to true the disk space will be monitored and the broker will reject commands and pause replication
+      # if the thresholds of diskUsageCommandWatermark and diskUsageReplicationWatermark are reached.
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_DISKUSAGEMONITORINGENABLED
+      # diskUsageMonitoringEnabled = true
+
+      # When the disk usage is above this value all client commands will be rejected.
+      # The value is specified as a percentage of the total disk space.
+      # The value should be in the range (0, 1].
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_DISKUSAGECOMMANDWATERMARK
+      # diskUsageCommandWatermark = 0.97
+
+      # When the disk usage is above this value, this broker will stop writing replicated events it receives from other brokers.
+      # The value is specified as a percentage of the total disk space.
+      # The value should be in the range (0, 1].
+      # It is recommended that diskUsageReplicationWatermark > diskUsageCommandWatermark
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_DISKUSAGEREPLICATIONWATERMARK
+      # diskUsageReplicationWatermark = 0.99
+
+      # Sets the interval at which the disk usage is monitored
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_DATA_DISKUSAGEMONITORINGINTERVAL
+      # diskUsageMonitoringInterval = 1s
+
+      # rocksdb:
+        # Specify custom column family options overwriting Zeebe's own defaults.
+        # WARNING: This setting requires in-depth knowledge of Zeebe's embedded database: RocksDB.
+        # The expected property key names and values are derived from RocksDB's C implementation,
+        # and are not limited to the provided examples below. Please look in RocksDB's SCM repo
+        # for the files: `cf_options.h` and `options_helper.cc`. This setting can also be overridden
+        # using the environment variable ZEEBE_BROKER_DATA_ROCKSDB_COLUMNFAMILYOPTIONS_{PROPERTY_KEY_NAME}
+        # For example, `write_buffer_size` can be set using `ZEEBE_BROKER_DATA_ROCKSDB_COLUMNFAMILYOPTIONS_WRITE_BUFFER_SIZE`.
+        # columnFamilyOptions:
+          # compaction_pri: "kOldestSmallestSeqFirst"
+          # write_buffer_size: 67108864
+
+    # cluster:
+      # This section contains all cluster related configurations, to setup a zeebe cluster
+
+      # Specifies the unique id of this broker node in a cluster.
+      # The id should be between 0 and number of nodes in the cluster (exclusive).
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_NODEID.
+      # nodeId: 0
+
+      # Controls the number of partitions, which should exist in the cluster.
+      #
+      # This can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_PARTITIONSCOUNT.
+      # partitionsCount: 1
+
+      # Controls the replication factor, which defines the count of replicas per partition.
+      # The replication factor cannot be greater than the number of nodes in the cluster.
+      #
+      # This can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_REPLICATIONFACTOR.
+      # replicationFactor: 1
+
+      # Specifies the zeebe cluster size. This value is used to determine which broker
+      # is responsible for which partition.
+      #
+      # This can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_CLUSTERSIZE.
+      # clusterSize: 1
+
+      # Allows to specify a list of known other nodes to connect to on startup
+      # The contact points of the internal network configuration must be specified.
+      # The format is [HOST:PORT]
+      # Example:
+      # initialContactPoints : [ 192.168.1.22:26502, 192.168.1.32:26502 ]
+      #
+      # To guarantee the cluster can survive network partitions, all nodes must be specified
+      # as initial contact points.
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_INITIALCONTACTPOINTS
+      # specifying a comma-separated list of contact points.
+      # Default is empty list:
+      # initialContactPoints: []
+
+      # Allows to specify a name for the cluster
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_CLUSTERNAME.
+      # Example:
+      # clusterName: zeebe-cluster
+
+      # Configure parameters for SWIM protocol which is used to propagate cluster membership
+      # information among brokers and gateways
+      # membership:
+
+        # Configure whether to broadcast member updates to all members.
+        # If set to false updates will be gossiped among the members.
+        # If set to true the network traffic may increase but it reduce the time to detect membership changes.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_BROADCASTUPDATES
+        # broadcastUpdates: false
+
+        # Configure whether to broadcast disputes to all members.
+        # If set to true the network traffic may increase but it reduce the time to detect membership changes.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_BROADCASTDISPUTES
+        # broadcastDisputes: true
+
+        # Configure whether to notify a suspect node on state changes.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_NOTIFYSUSPECT
+        # notifySuspect: false
+
+        # Sets the interval at which the membership updates are sent to a random member.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_GOSSIPINTERVAL
+        # gossipInterval: 250ms
+
+        # Sets the number of members to which membership updates are sent at each gossip interval.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_GOSSIPFANOUT
+        # gossipFanout: 2
+
+        # Sets the interval at which to probe a random member.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_PROBEINTERVAL
+        # probeInterval: 1s
+
+        # Sets the timeout for a probe response
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_PROBETIMEOUT
+        # probeTimeout: 100ms
+
+        # Sets the number of probes failed before declaring a member is suspect
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_SUSPECTPROBES
+        # suspectProbes: 3
+
+        # Sets the timeout for a suspect member is declared dead.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_FAILURETIMEOUT
+        # failureTimeout: 10s
+
+        # Sets the interval at which this member synchronizes its membership information with a random member.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_CLUSTER_MEMBERSHIP_SYNCINTERVAL
+        # syncInterval: 10s
+
+    # threads:
+      # Controls the number of non-blocking CPU threads to be used. WARNING: You
+      # should never specify a value that is larger than the number of physical cores
+      # available. Good practice is to leave 1-2 cores for ioThreads and the operating
+      # system (it has to run somewhere). For example, when running Zeebe on a machine
+      # which has 4 cores, a good value would be 2.
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_THREADS_CPUTHREADCOUNT
+      # cpuThreadCount: 2
+
+      # Controls the number of io threads to be used. These threads are used for
+      # workloads that write data to disk. While writing, these threads are blocked
+      # which means that they yield the CPU.
+      #
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_THREADS_IOTHREADCOUNT
+      # ioThreadCount: 2
+
+    # backpressure:
+      # Configure backpressure below.
+      #
+      # Set this to enable or disable backpressure. When enabled the broker rejects user requests when
+      # the number of inflight requests is greater than than the "limit". The value of the "limit" is determined
+      # based on the configured algorithm.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_ENABLED
+      # enabled : true
+
+      # if enabled - will use the average latencies over a window as the current latency to update the limit.
+      # It is not recommended to enable this when the algorithm is aimd. This setting is not applicable to fixed limit.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_USEWINDOWED
+      # useWindowed: true
+
+      # The algorithm configures which algorithm to use for the backpressure.
+      # It should be one of vegas, aimd, fixed, gradient, or gradient2.
+      # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_ALGORITHM
+      # algorithm: "vegas"
+
+      # Configure the parameters for "aimd" algorithm.
+      # AIMD increases the limit for every successful response and decrease the limit for every request timeout.
+      # aimd:
+        # The limit will be reduced if the observed latency is greater than the requestTimeout.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_AIMD_REQUESTTIMEOUT
+        # requestTimeout: "1s"
+
+        # The initial limit to be used when the broker starts. The limit will be reset to this value when the broker restarts.
+        # This setting can also be overridden using the environment ZEEBE_BROKER_BACKPRESSURE_AIMD_INITIALLIMIT
+        # initialLimit: 100
+
+        # The minimum limit. This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_AIMD_MINLIMIT
+        # minLimit: 1
+
+        # The maximum limit. This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_AIMD_MAXLIMIT
+        # maxLimit: 1000
+
+        # The backoffRatio is a double value x such that 0 <  x  < 1. It determines the factor by which the limit is decreased.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_AIMD_BACKOFFRATIO
+        # backoffRatio: 0.9
+
+      # Configure the parameters for "fixed" algorithm
+      # fixed:
+        # Set a fixed limit. This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_FIXED_LIMIT
+        # limit: 20
+
+      # Configure the parameters for "vegas" algorithm
+      # Vegas is an adaptive limit algorithm based on TCP Vegas congestion control algorithm.
+      # It estimates a queue size which indicates how many additional requests are in the queue over the estimated limit.
+      # The limit is adjusted based on this queueSize.
+      # vegas:
+        # The initial limit to be used when the broker starts. The limit will be reset to this value when the broker restarts.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_VEGAS_INITIALLIMIT
+        # initialLimit: 20
+
+        # The limit is increased if the queue size is less than this value.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_VEGAS_ALPHA
+        # alpha: 3
+
+        # The limit is decreased if the queue size is greater than this value.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_VEGAS_BETA
+        # beta: 6
+
+      # Configure the parameters for "gradient" algorithm
+      # In gradient algorithm, the limit is adjusted based on the gradient of observed latency and an estimated minimum latency.
+      # If gradient is less than 1, the limit is decreased otherwise the limit is increased.
+      # gradient:
+        # The minimum limit. This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT_MINLIMIT
+        # minLimit: 10
+
+        # The initial limit to be used when the broker starts. The limit will be reset to this value when the broker restarts.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT_INITIALLIMIT
+        # initialLimit: 20
+
+        # Tolerance for changes from minimum latency. A value >= 1.0 indicating how much change from minimum latency is acceptable
+        # before reducing the limit.  For example, a value of 2.0 means that a 2x increase in latency is acceptable.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT_RTTTOLERANCE
+        # rttTolerance: 2.0
+
+      # Configure the parameters for "gradient2" algorithm
+      # gradient2:
+        # The minimum limit. This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT2_MINLIMIT
+        # minLimit: 10
+
+        # The initial limit to be used when the broker starts. The limit will be reset to this value when the broker restarts.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT2_INITIALLIMIT
+        # initialLimit: 20
+
+        # Tolerance for changes from minimum latency. A value >= 1.0 indicating how much change from minimum latency is acceptable
+        # before reducing the limit.  For example, a value of 2.0 means that a 2x increase in latency is acceptable.
+        # This setting can also be overridden using the environment variable ZEEBE_BROKER_BACKPRESSURE_GRADIENT2_RTTTOLERANCE
+        # rttTolerance: 2.0
+
+        # longWindow is the length of the window (the number of samples) to calculate the exponentially smoothed average latency.
+        # This setting can also be overridden using the environment ZEEBE_BROKER_BACKPRESSURE_GRADIENT2_LONGWINDOW
+        # longWindow: 600
+
+    # exporters:
+      # Configure exporters below
+      #
+      # Each exporter should be configured following this template:
+      #
+      # jarPath:
+      #   path to the JAR file containing the exporter class. JARs are only loaded once, so you can define
+      #   two exporters that point to the same JAR, with the same class or a different one, and use args
+      #   to parametrize its instantiation.
+      # className:
+      #   entry point of the exporter, a class which *must* extend the io.zeebe.exporter.Exporter
+      #   interface.
+      #
+      # A nested table as "args:" will allow you to inject arbitrary arguments into your
+      # class through the use of annotations.
+      #
+      # These setting can also be overridden using the environment variables "ZEEBE_BROKER_EXPORTERS_[exporter name]_..."
+      #
+
+      # Debug Log Exporter --------------
+      #
+      # Enable the following debug exporter to log the exported records to console
+      #
+      # These setting can also be overridden using the environment variables "ZEEBE_BROKER_EXPORTERS_DEBUGLOG_..."
+      #
+      # debuglog:
+        # className: io.zeebe.broker.exporter.debug.DebugLogExporter
+        # args:
+        #   logLevel: debug
+        #   prettyPrint: false
+
+      # Debug HTTP Export ---------------
+      #
+      # Enable the following debug exporter to start a http server to inspect the exported records
+      #
+      # These setting can also be overridden using the environment variables "ZEEBE_BROKER_EXPORTERS_DEBUGHTTP_..."
+      #
+      # debugHttp:
+        # className: io.zeebe.broker.exporter.debug.DebugHttpExporter
+        # args:
+        #   port = 8000
+        #   limit = 1024
+
+      # Elasticsearch Exporter ----------
+      # An example configuration for the elasticsearch exporter:
+      #
+      # These setting can also be overridden using the environment variables "ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_..."
+      #
+      # elasticsearch:
+        # className: io.zeebe.exporter.ElasticsearchExporter
+        #
+        # args:
+        #   url: http://localhost:9200
+        #
+        #   bulk:
+        #     delay: 5
+        #     size: 1000
+        #     memoryLimit: 10485760
+        #
+        #   authentication:
+        #     username: elastic
+        #     password: changeme
+        #
+        #   index:
+        #     prefix: zeebe-record
+        #     createTemplate: true
+        #
+        #     command: false
+        #     event: true
+        #     rejection: false
+        #
+        #     deployment: true
+        #     error: true
+        #     incident: true
+        #     job: true
+        #     jobBatch: false
+        #     message: false
+        #     messageSubscription: false
+        #     variable: true
+        #     variableDocument: true
+        #     workflowInstance: true
+        #     workflowInstanceCreation: false
+        #     workflowInstanceSubscription: false
+        #
+        #     ignoreVariablesAbove: 32677

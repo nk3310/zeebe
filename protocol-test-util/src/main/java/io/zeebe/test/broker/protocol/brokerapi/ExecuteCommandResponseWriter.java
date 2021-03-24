@@ -1,114 +1,126 @@
 /*
- * Copyright © 2017 camunda services GmbH (info@camunda.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH under
+ * one or more contributor license agreements. See the NOTICE file distributed
+ * with this work for additional information regarding copyright ownership.
+ * Licensed under the Zeebe Community License 1.0. You may not use this file
+ * except in compliance with the Zeebe Community License 1.0.
  */
 package io.zeebe.test.broker.protocol.brokerapi;
 
-import static io.zeebe.protocol.clientapi.ExecuteCommandResponseEncoder.eventHeaderLength;
-
+import io.zeebe.protocol.record.ExecuteCommandResponseEncoder;
+import io.zeebe.protocol.record.MessageHeaderEncoder;
+import io.zeebe.protocol.record.RecordType;
+import io.zeebe.protocol.record.RejectionType;
+import io.zeebe.protocol.record.ValueType;
+import io.zeebe.protocol.record.intent.Intent;
+import io.zeebe.test.broker.protocol.MsgPackHelper;
+import io.zeebe.util.EnsureUtil;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 
-import io.zeebe.protocol.clientapi.ExecuteCommandResponseEncoder;
-import io.zeebe.protocol.clientapi.MessageHeaderEncoder;
-import io.zeebe.test.broker.protocol.MsgPackHelper;
+public final class ExecuteCommandResponseWriter
+    extends AbstractMessageBuilder<ExecuteCommandRequest> {
+  protected final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
+  protected final ExecuteCommandResponseEncoder bodyEncoder = new ExecuteCommandResponseEncoder();
+  protected final MsgPackHelper msgPackHelper;
 
-public class ExecuteCommandResponseWriter extends AbstractMessageBuilder<ExecuteCommandRequest>
-{
-    protected final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
-    protected final ExecuteCommandResponseEncoder bodyEncoder = new ExecuteCommandResponseEncoder();
-    protected final MsgPackHelper msgPackHelper;
+  protected Function<ExecuteCommandRequest, Long> keyFunction = r -> r.key();
+  protected Function<ExecuteCommandRequest, Integer> partitionIdFunction = r -> r.partitionId();
+  protected Function<ExecuteCommandRequest, Map<String, Object>> eventFunction;
+  protected long key;
+  protected int partitionId;
+  protected byte[] value;
+  private Function<ExecuteCommandRequest, Intent> intentFunction = r -> r.intent();
+  private RecordType recordType;
+  private Intent intent;
+  private ValueType valueType;
+  private RejectionType rejectionType = RejectionType.NULL_VAL;
+  private UnsafeBuffer rejectionReason = new UnsafeBuffer(0, 0);
 
-    protected Function<ExecuteCommandRequest, Long> keyFunction = r -> r.key();
-    protected Function<ExecuteCommandRequest, Integer> partitionIdFunction = r -> r.partitionId();
-    protected Function<ExecuteCommandRequest, Map<String, Object>> eventFunction;
-    protected Function<ExecuteCommandRequest, Long> positionFunction = r -> r.position();
+  public ExecuteCommandResponseWriter(final MsgPackHelper msgPackHelper) {
+    this.msgPackHelper = msgPackHelper;
+  }
 
-    protected long key;
-    protected int partitionId;
-    protected byte[] event;
-    protected long position;
+  @Override
+  public void initializeFrom(final ExecuteCommandRequest request) {
+    key = keyFunction.apply(request);
+    partitionId = partitionIdFunction.apply(request);
+    final Map<String, Object> deserializedEvent = eventFunction.apply(request);
+    value = msgPackHelper.encodeAsMsgPack(deserializedEvent);
+    valueType = request.valueType();
+    intent = intentFunction.apply(request);
+  }
 
-    public ExecuteCommandResponseWriter(MsgPackHelper msgPackHelper)
-    {
-        this.msgPackHelper = msgPackHelper;
-    }
+  public void setPartitionIdFunction(
+      final Function<ExecuteCommandRequest, Integer> partitionIdFunction) {
+    this.partitionIdFunction = partitionIdFunction;
+  }
 
-    @Override
-    public void initializeFrom(ExecuteCommandRequest request)
-    {
-        key = keyFunction.apply(request);
-        partitionId = partitionIdFunction.apply(request);
-        position = positionFunction.apply(request);
-        final Map<String, Object> deserializedEvent = eventFunction.apply(request);
-        event = msgPackHelper.encodeAsMsgPack(deserializedEvent);
-    }
+  public void setEventFunction(
+      final Function<ExecuteCommandRequest, Map<String, Object>> eventFunction) {
+    this.eventFunction = eventFunction;
+  }
 
-    public void setPartitionIdFunction(Function<ExecuteCommandRequest, Integer> partitionIdFunction)
-    {
-        this.partitionIdFunction = partitionIdFunction;
-    }
+  public void setRecordType(final RecordType recordType) {
+    this.recordType = recordType;
+  }
 
-    public void setEventFunction(Function<ExecuteCommandRequest, Map<String, Object>> eventFunction)
-    {
-        this.eventFunction = eventFunction;
-    }
+  public void setKeyFunction(final Function<ExecuteCommandRequest, Long> keyFunction) {
+    this.keyFunction = keyFunction;
+  }
 
-    public void setKeyFunction(Function<ExecuteCommandRequest, Long> keyFunction)
-    {
-        this.keyFunction = keyFunction;
-    }
+  public void setIntentFunction(final Function<ExecuteCommandRequest, Intent> intentFunction) {
+    this.intentFunction = intentFunction;
+  }
 
-    public void setPositionFunction(Function<ExecuteCommandRequest, Long> positionFunction)
-    {
-        this.positionFunction = positionFunction;
+  public void setRejectionType(final RejectionType rejectionType) {
+    this.rejectionType = rejectionType;
+  }
 
-    }
+  public void setRejectionReason(final String rejectionReason) {
+    final byte[] bytes = rejectionReason.getBytes(StandardCharsets.UTF_8);
+    this.rejectionReason = new UnsafeBuffer(bytes);
+  }
 
-    @Override
-    public int getLength()
-    {
-        return MessageHeaderEncoder.ENCODED_LENGTH +
-                ExecuteCommandResponseEncoder.BLOCK_LENGTH +
-                eventHeaderLength() +
-                event.length;
-    }
+  @Override
+  public int getLength() {
+    return MessageHeaderEncoder.ENCODED_LENGTH
+        + ExecuteCommandResponseEncoder.BLOCK_LENGTH
+        + ExecuteCommandResponseEncoder.valueHeaderLength()
+        + value.length
+        + ExecuteCommandResponseEncoder.rejectionReasonHeaderLength()
+        + rejectionReason.capacity();
+  }
 
-    @Override
-    public void write(MutableDirectBuffer buffer, int offset)
-    {
-        // protocol header
-        headerEncoder
-            .wrap(buffer, offset)
-            .blockLength(bodyEncoder.sbeBlockLength())
-            .templateId(bodyEncoder.sbeTemplateId())
-            .schemaId(bodyEncoder.sbeSchemaId())
-            .version(bodyEncoder.sbeSchemaVersion());
+  @Override
+  public void write(final MutableDirectBuffer buffer, int offset) {
+    EnsureUtil.ensureNotNull("recordType", recordType);
+    EnsureUtil.ensureNotNull("valueType", valueType);
+    EnsureUtil.ensureNotNull("intent", intent);
 
-        offset += headerEncoder.encodedLength();
+    // protocol header
+    headerEncoder
+        .wrap(buffer, offset)
+        .blockLength(bodyEncoder.sbeBlockLength())
+        .templateId(bodyEncoder.sbeTemplateId())
+        .schemaId(bodyEncoder.sbeSchemaId())
+        .version(bodyEncoder.sbeSchemaVersion());
 
-        // protocol message
-        bodyEncoder
-            .wrap(buffer, offset)
-            .partitionId(partitionId)
-            .key(key)
-            .position(position)
-            .putEvent(event, 0, event.length);
+    offset += headerEncoder.encodedLength();
 
-    }
-
-
+    // protocol message
+    bodyEncoder
+        .wrap(buffer, offset)
+        .recordType(recordType)
+        .valueType(valueType)
+        .intent(intent.value())
+        .partitionId(partitionId)
+        .key(key)
+        .rejectionType(rejectionType)
+        .putValue(value, 0, value.length)
+        .putRejectionReason(rejectionReason, 0, rejectionReason.capacity());
+  }
 }

@@ -1,71 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
   <name>Zeebe Root</name>
   <artifactId>zeebe-root</artifactId>
-  <version>0.9.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <parent>
     <groupId>io.zeebe</groupId>
-    <artifactId>zb-parent</artifactId>
-    <version>0.6.0</version>
-    <!-- do not remove empty tag - http://jira.codehaus.org/browse/MNG-4687 -->
-    <relativePath />
+    <artifactId>zeebe-parent</artifactId>
+    <version>0.27.0-SNAPSHOT</version>
+    <relativePath>parent/</relativePath>
   </parent>
 
   <modules>
+    <module>bom</module>
     <module>parent</module>
-    <module>broker-core</module>
+    <module>atomix</module>
+    <module>broker</module>
     <module>qa</module>
-    <module>client-java</module>
     <module>protocol-test-util</module>
     <module>samples</module>
     <module>dist</module>
+    <module>protocol</module>
+    <module>bpmn-model</module>
+    <module>logstreams</module>
+    <module>engine</module>
+    <module>transport</module>
+    <module>test</module>
+    <module>util</module>
+    <module>test-util</module>
+    <module>dispatcher</module>
+    <module>msgpack-core</module>
+    <module>msgpack-value</module>
+    <module>build-tools</module>
+    <module>gateway-protocol</module>
+    <module>gateway-protocol-impl</module>
+    <module>gateway</module>
+    <module>clients/java</module>
+    <module>exporter-api</module>
+    <module>protocol-asserts</module>
+    <module>exporters/elasticsearch-exporter</module>
+    <module>protocol-impl</module>
+    <module>zb-db</module>
+    <module>update-tests</module>
+    <module>expression-language</module>
+    <module>snapshot</module>
+    <module>benchmarks/project</module>
   </modules>
-
-  <repositories>
-    <repository>
-      <id>zeebe</id>
-      <name>Zeebe Repository</name>
-      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-
-    <repository>
-      <id>zeebe-snapshots</id>
-      <name>Zeebe Snapshot Repository</name>
-      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io-snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
-  <profiles>
-    <profile>
-      <id>skip-unstable-tests</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <excludedGroups>io.zeebe.UnstableTest</excludedGroups>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <scm>
     <url>https://github.com/zeebe-io/zeebe</url>

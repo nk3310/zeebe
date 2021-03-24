@@ -1,95 +1,71 @@
 /*
- * Copyright © 2017 camunda services GmbH (info@camunda.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH under
+ * one or more contributor license agreements. See the NOTICE file distributed
+ * with this work for additional information regarding copyright ownership.
+ * Licensed under the Zeebe Community License 1.0. You may not use this file
+ * except in compliance with the Zeebe Community License 1.0.
  */
 package io.zeebe.test.broker.protocol.brokerapi;
 
-import static io.zeebe.protocol.clientapi.ExecuteCommandRequestDecoder.commandHeaderLength;
-
-import java.util.Map;
-
-import org.agrona.DirectBuffer;
-import org.agrona.io.DirectBufferInputStream;
-import io.zeebe.protocol.clientapi.EventType;
-import io.zeebe.protocol.clientapi.ExecuteCommandRequestDecoder;
-import io.zeebe.protocol.clientapi.MessageHeaderDecoder;
+import io.zeebe.protocol.record.ExecuteCommandRequestDecoder;
+import io.zeebe.protocol.record.MessageHeaderDecoder;
+import io.zeebe.protocol.record.ValueType;
+import io.zeebe.protocol.record.intent.Intent;
 import io.zeebe.test.broker.protocol.MsgPackHelper;
 import io.zeebe.util.buffer.BufferReader;
+import java.util.Map;
+import org.agrona.DirectBuffer;
+import org.agrona.io.DirectBufferInputStream;
 
-import io.zeebe.transport.RemoteAddress;
+public final class ExecuteCommandRequest implements BufferReader {
 
-public class ExecuteCommandRequest implements BufferReader
-{
+  protected final MessageHeaderDecoder headerDecoder = new MessageHeaderDecoder();
+  protected final ExecuteCommandRequestDecoder bodyDecoder = new ExecuteCommandRequestDecoder();
 
-    protected final MessageHeaderDecoder headerDecoder = new MessageHeaderDecoder();
-    protected final ExecuteCommandRequestDecoder bodyDecoder = new ExecuteCommandRequestDecoder();
+  protected final MsgPackHelper msgPackHelper;
 
-    protected final MsgPackHelper msgPackHelper;
+  protected Map<String, Object> command;
 
-    protected Map<String, Object> command;
-    protected RemoteAddress source;
+  public ExecuteCommandRequest(final MsgPackHelper msgPackHelper) {
+    this.msgPackHelper = msgPackHelper;
+  }
 
-    public ExecuteCommandRequest(RemoteAddress source, MsgPackHelper msgPackHelper)
-    {
-        this.source = source;
-        this.msgPackHelper = msgPackHelper;
-    }
+  public long key() {
+    return bodyDecoder.key();
+  }
 
-    public long key()
-    {
-        return bodyDecoder.key();
-    }
+  public int partitionId() {
+    return bodyDecoder.partitionId();
+  }
 
-    public int partitionId()
-    {
-        return bodyDecoder.partitionId();
-    }
+  public ValueType valueType() {
+    return bodyDecoder.valueType();
+  }
 
-    public long position()
-    {
-        return bodyDecoder.position();
-    }
+  public Intent intent() {
+    return Intent.fromProtocolValue(valueType(), bodyDecoder.intent());
+  }
 
-    public EventType eventType()
-    {
-        return bodyDecoder.eventType();
-    }
+  public Map<String, Object> getCommand() {
+    return command;
+  }
 
-    public Map<String, Object> getCommand()
-    {
-        return command;
-    }
+  @Override
+  public void wrap(final DirectBuffer buffer, final int offset, final int length) {
+    headerDecoder.wrap(buffer, offset);
 
-    public RemoteAddress getSource()
-    {
-        return source;
-    }
+    bodyDecoder.wrap(
+        buffer,
+        offset + headerDecoder.encodedLength(),
+        headerDecoder.blockLength(),
+        headerDecoder.version());
 
-    @Override
-    public void wrap(DirectBuffer buffer, int offset, int length)
-    {
-        headerDecoder.wrap(buffer, offset);
+    final int commandLength = bodyDecoder.valueLength();
+    final int commandOffset =
+        bodyDecoder.limit() + ExecuteCommandRequestDecoder.valueHeaderLength();
 
-        bodyDecoder.wrap(buffer, offset + headerDecoder.encodedLength(), headerDecoder.blockLength(), headerDecoder.version());
-
-        final int commandLength = bodyDecoder.commandLength();
-        final int commandOffset = bodyDecoder.limit() + commandHeaderLength();
-
-        command = msgPackHelper.readMsgPack(new DirectBufferInputStream(
-                buffer,
-                commandOffset,
-                commandLength));
-    }
-
+    command =
+        msgPackHelper.readMsgPack(
+            new DirectBufferInputStream(buffer, commandOffset, commandLength));
+  }
 }

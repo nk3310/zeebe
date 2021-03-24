@@ -1,33 +1,18 @@
 #!/bin/bash -xeu
 
-cfgHome=/usr/local/zeebe/conf/zeebe.cfg.toml
-cfgLog=/usr/local/zeebe/conf/log4j2.xml
+# legacy support
+# This environment variable was used to set the gatewway cluster host in standalone and embedded mode.
+# Now, there are two dedicated environment variables for the two different deployment scenarios.
+export ZEEBE_HOST=${ZEEBE_HOST:-$(hostname -i)}
+# Legacy support
 
-INITIAL_CONTACT_POINT=${INITIAL_CONTACT_POINT:-}
-ZEEBE_HOST=${ZEEBE_HOST:-$(hostname -i)}
+if [ "$ZEEBE_STANDALONE_GATEWAY" = "true" ]; then
+    export ZEEBE_GATEWAY_CLUSTER_HOST=${ZEEBE_GATEWAY_CLUSTER_HOST:-${ZEEBE_HOST}}
 
-if [[ "$DEPLOY_ON_KUBERNETES" == "true" ]]; then
-
-    DNSNAME="${HOST}.${DNS}"
-
-    sed -i "s/@DNSNAME@/${DNSNAME}/g" $cfgHome
-
-    if [[ -n $INITIAL_CONTACT_POINT && ! $HOST =~ .*-0$ ]]; then
-        sed -i "s/@INITIAL_CONTACT_POINT@/initialContactPoints = \[\n\t\"${INITIAL_CONTACT_POINT}\"\n\]/g" $cfgHome
-    else
-        sed -i "s/@INITIAL_CONTACT_POINT@//g" $cfgHome
-    fi
-
+    exec /usr/local/zeebe/bin/gateway
 else
+    export ZEEBE_BROKER_NETWORK_HOST=${ZEEBE_BROKER_NETWORK_HOST:-${ZEEBE_HOST}}
+    export ZEEBE_BROKER_GATEWAY_CLUSTER_HOST=${ZEEBE_BROKER_GATEWAY_CLUSTER_HOST:-${ZEEBE_BROKER_NETWORK_HOST}}
 
-    sed -i "s/@DNSNAME@/${ZEEBE_HOST}/g" $cfgHome
-
-    if [ -n "${INITIAL_CONTACT_POINT}" ]; then
-        sed -i "s/@INITIAL_CONTACT_POINT@/initialContactPoints = \[\n\t\"${INITIAL_CONTACT_POINT}\"\n\]/g" $cfgHome
-    else
-        sed -i "s/@INITIAL_CONTACT_POINT@//g" $cfgHome
-    fi
-
+    exec /usr/local/zeebe/bin/broker
 fi
-
-exec /usr/local/zeebe/bin/broker
